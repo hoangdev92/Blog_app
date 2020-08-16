@@ -1,6 +1,6 @@
 class SessionController < ApplicationController
   before_action :params_register, only: [:create]
-  skip_before_action :require_login, only: %i[login signin create register forgot_password destroy]
+  skip_before_action :require_login, only: %i[login signin create register forgot_password destroy login_app]
   def login
   end
 
@@ -13,6 +13,17 @@ class SessionController < ApplicationController
       flash[:error] = 'Taì Khoản hoặc mật khẩu không chính xác'
       render :login
     end
+  end
+
+  def login_app
+    @user = User.from_omniauth(request.env['omniauth.auth'])
+    if @user
+      log_in @user
+      flash[:success] = "Welcome, #{@user.name}!"
+    else
+      flash[:warning] = "Lỗi Khi đăng nhập!"
+    end
+    redirect_to root_path
   end
 
   def create
