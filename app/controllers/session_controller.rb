@@ -7,6 +7,7 @@ class SessionController < ApplicationController
   def signin
     user = User.find_by(email: params[:user][:email])
     if user&.authenticate(params[:user][:password])
+      set_is_online user
       log_in user
       redirect_to trangchu_path
     else
@@ -18,6 +19,7 @@ class SessionController < ApplicationController
   def login_app
     @user = User.from_omniauth(request.env['omniauth.auth'])
     if @user
+      set_is_online @user
       log_in @user
       flash[:success] = "Welcome, #{@user.name}!"
     else
@@ -45,6 +47,16 @@ class SessionController < ApplicationController
       render :register
   end
 
+  def set_is_online user
+    if user.password == nil
+      user.is_online = true
+      user.save!(validate: false)
+    else
+      user.is_online = true
+      user.update
+    end
+  end
+
   def register
     @user = User.new
   end
@@ -53,6 +65,14 @@ class SessionController < ApplicationController
   end
 
   def destroy
+    user = User.find(session[:user_id])
+    user.is_online = false
+    if user.password == nil
+      user.save!(validate: false)
+    else
+      user.is_online = true
+      user.update
+    end
     session[:user_id] = nil
     flash[:success] = "Đăng Xuất thành công!"
     redirect_to login_path
